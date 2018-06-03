@@ -1,0 +1,21 @@
+{
+  "scriptFile": "helloworldjvm-assembly-0.1.0.jar",
+  "entryPoint": "ttg.Function.parse",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "name": "req",
+      "direction": "in",
+      "authLevel": "anonymous",
+      "methods": [
+        "get",
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "name": "$return",
+      "direction": "out"
+    }
+  ]
+}
