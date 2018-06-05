@@ -8,7 +8,7 @@ function in scala-jvm and scala-js. This project template creates two functions,
 one for the jvm and one for nodejs (javascript).
 
 Reading this
-[blah](http://msdynamicscrmmeanderings.blogspot.com/2018/05/dynamics-crm-azure-functionapps-and-java.html)
+[blog](http://msdynamicscrmmeanderings.blogspot.com/2018/05/dynamics-crm-azure-functionapps-and-java.html)
 may be helpful.
 
 ## Create the project

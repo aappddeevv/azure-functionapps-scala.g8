@@ -1,5 +1,5 @@
 {
-  "scriptFile": "helloworldjvm_2.12-0.1.0.jar",
+  "scriptFile": "helloworldjvmfatjar-assembly-0.1.0.jar",
   "entryPoint": "ttg.Function.parse",
   "bindings": [
     {
