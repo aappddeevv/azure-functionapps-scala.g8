@@ -9,8 +9,10 @@ function libraryOutput(dest) {
     return {
         output: {
             path: dest,
-            filename: "[name].js",
-            library: "[name]",
+            // these are set to index.js which is what functionapp expects for js functions
+            //filename: "[name].js",
+            //library: "[name]",
+            filename: "index.js",
             // assigns whatever is exported from entry point to module.exports
             libraryTarget: "commonjs2",
         }}

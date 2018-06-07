@@ -1,6 +1,7 @@
 *.class
 *.log
 *.orig
+*.jar
 
 # sbt specific
 .cache
@@ -12,7 +13,7 @@ lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
-node_modules/*
+node_modules
 
 .ensime*
 .classpath

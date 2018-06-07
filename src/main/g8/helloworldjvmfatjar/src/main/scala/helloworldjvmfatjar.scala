@@ -1,4 +1,4 @@
-package helloworldjvm
+package helloworldjvmfatjar
 
 import java.util._
 import java.io._
@@ -18,6 +18,7 @@ case class ParseSuccess(
 )
 
 object FunctionApp {
+
   def processPayload(firstname: String, lastname: String) =
     s"$firstname $lastname".asRight[Throwable]
 
@@ -25,9 +26,9 @@ object FunctionApp {
     request: HttpRequestMessage[Optional[String]],
     context: ExecutionContext
   ): HttpResponseMessage[String] = {
-    context.getLogger().info("HTTP trigger: helloworldjvm (not fatjar)")
-    context.getLogger().info(s"""java.class.path ${sys.props.get("java.class.path")}""")    
-    request.createResponse(200, "good job")
+
+    context.getLogger().info("HTTP trigger: helloworldjvmfatjar")
+    context.getLogger().info(s"""java.class.path ${sys.props.get("java.class.path")}""")
     val args: ValidatedNel[String, (String, String)] =
       parsejson(request.getBody().orElse("{}")) match {
         case Left(pfailure) => Validated.invalidNel(s"Malformed body: ${pfailure.show}")

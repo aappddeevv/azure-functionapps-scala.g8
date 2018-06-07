@@ -2,8 +2,7 @@
     "name": "functionapps",
     "version": "0.1.0",
     "scripts": {
-        "helloworldjs:dev": "webpack-cli --env.name=helloworldjs --config functionapps.webpack.config.js",
-        "helloworldjs": "webpack-cli --env.name=helloworldjs --env.BUILD_KIND=production --config functionapps.webpack.config.js",
+        "functionapps": "webpack-cli --config functionapps.webpack.config.js",
         "build": "run-s helloworldjs"
     },
     "devDependencies": {
@@ -24,5 +23,7 @@
         "webpack-cli": "^2.0.14",
         "webpack-merge": "^4.1.2"
     },
-    "dependencies": {}
+    "dependencies": {
+        
+    }
 }

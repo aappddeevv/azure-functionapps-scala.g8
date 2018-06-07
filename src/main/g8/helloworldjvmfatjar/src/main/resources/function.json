@@ -1,10 +1,10 @@
 {
   "scriptFile": "helloworldjvmfatjar-assembly-0.1.0.jar",
-  "entryPoint": "ttg.Function.parse",
+  "entryPoint": "helloworldjvmfatjar.FunctionApp.helloworld",
   "bindings": [
     {
       "type": "httpTrigger",
-      "name": "req",
+      "name": "request",
       "direction": "in",
       "authLevel": "anonymous",
       "methods": [
@@ -17,5 +17,6 @@
       "name": "$return",
       "direction": "out"
     }
-  ]
+  ],
+    "disabled": false
 }
