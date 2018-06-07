@@ -42,7 +42,7 @@ want it to do.
 * `createZip`: Create the zip-deploy file suitable for use with curl or azure CLI.
 * `upload`: Run the azure CLI if AZURE_RG and AZURE_FUNCTIONAPP_NAME are defined
   in either the props on the environment.
-* `buildAndUpload`: Build everything and upload.  
+* `buildAndUpload`: Build everything and upload.
 * `watchJS`: A command alias that builds *only* the JS project and uploads it.
 
 You may run into issues with bundling the jvm project as creating a single
@@ -61,7 +61,15 @@ npm install
 Then run in sbt:
 
 ```sh
-buildAndUpload -DAZURE_RG=<resource group> -DAZURE_FUNCTIONAPP_NAME=<functionapp name> -DBUILD_KIND=prod
+sbt
+sb> buildAndUpload -DAZURE_RG=<resource group> -DAZURE_FUNCTIONAPP_NAME=<functionapp name> -DBUILD_KIND=prod
+```
+
+or 
+
+```sh
+AZURE_RG=<resource group> AZURE_FUNCTIONAPP_NAME=<functionapp name> BUILD_KIND=prod sbt
+sbt> buildAndUpload
 ```
 
 The env/props BUILD_KIND (any string starting with prod activates prod build

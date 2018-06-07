@@ -14,7 +14,7 @@ src_managed/
 project/boot/
 project/plugins/project/
 node_modules
-
+package-lock.json
 .ensime*
 .classpath
 .project

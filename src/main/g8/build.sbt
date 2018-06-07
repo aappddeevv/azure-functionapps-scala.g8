@@ -5,7 +5,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 
 lazy val buildSettings = Seq(
-  organization := "me",
+  organization := "$org$",
   licenses ++= Seq(("MIT", url("http://opensource.org/licenses/MIT"))),
   scalaVersion := "2.12.6",
 )
@@ -82,7 +82,7 @@ lazy val helloworldjvm = project
 
 lazy val helloworldjvmfatjar = project
 // if you rename the fatjar here, createDist should still be Ok
-//.settings(assemblyJarName := s"${(thisProject / name).value}-${(thisProject / version).value}-functionapp.jar")
+//.settings(assemblyJarName := s"\${(thisProject / name).value}-\${(thisProject / version).value}-functionapp.jar")
   .settings(libsettings)
   .settings(commonlibs)
   .settings(libraryDependencies ++= Seq(
@@ -128,8 +128,8 @@ buildEnv := {
 
 onLoadMessage := {
   val defaultMessage = onLoadMessage.value
-  s"""|${defaultMessage}
-      |Running in build environment: ${buildEnv.value}""".stripMargin
+  s"""|\${defaultMessage}
+      |Running in build environment: \${buildEnv.value}""".stripMargin
 }
 
 lazy val dist = settingKey[File]("Target directory for assembling functions.")
@@ -142,11 +142,11 @@ val zipName = settingKey[String]("Name of output zip deploy file.")
 zipName := {
   //val format = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss")
   //val datepart = format.format(java.util.Calendar.getInstance().getTime())
-  //could use s"""./${(root / name)value}-$datepart.zip"""
+  //could use s"""./\${(root / name)value}-\$datepart.zip"""
   sys.props.get("FUNCTIOINAPPS_ZIPNAME")
     .orElse(sys.env.get("FUNCTIONAPPS_ZIPNAME"))
   // the ./ is important due to bug in sbt.io.IO.zip
-    .getOrElse(s"./${(root / name).value}.zip")
+    .getOrElse(s"./\${(root / name).value}.zip")
 }
 
 /**
@@ -307,7 +307,7 @@ upload := {
   s.log.info("Uploading via azure.")
     (azureRG.value, azureFunctionappName.value) match {
     case (Some(r), Some(n)) =>
-      s"az functionapp deployment source config-zip -g $r -n $n --src ${zipName.value}" !
+      s"az functionapp deployment source config-zip -g \$r -n \$n --src \${zipName.value}" !
     case _ => s.log.info("No env variables defined to run command.")
   }
 }
@@ -318,7 +318,7 @@ restart := {
   s.log.info("Restarting the functionapp")
     (azureRG.value, azureFunctionappName.value) match {
     case (Some(r), Some(n)) =>
-      s"az functionapp restart $r -n $n" !
+      s"az functionapp restart \$r -n \$n" !
     case _ => s.log.info("No env variables defined to run command.")
   }
 }

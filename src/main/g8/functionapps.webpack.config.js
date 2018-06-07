@@ -2,7 +2,6 @@ const webpack = require("webpack")
 const merge = require("webpack-merge")
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 const path = require("path")
-const CopyWebpackPlugin = require("copy-webpack-plugin")
 
 // dest: output file in the dist function directory
 function libraryOutput(dest) {
