@@ -3,7 +3,6 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import org.scalajs.sbtplugin._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
-
 lazy val buildSettings = Seq(
   organization := "$org$",
   licenses ++= Seq(("MIT", url("http://opensource.org/licenses/MIT"))),
@@ -99,9 +98,6 @@ lazy val helloworldjs = project
   .settings(libraryDependencies ++=
     Seq("io.scalajs"             %%% "nodejs"      % "0.4.2",
   ))
-
-//watchSources += baseDirectory.value / "src/main/js"
-//watchSources += baseDirectory.value / "src/main/public"
 
 val azureRG = settingKey[Option[String]]("azure resource group name")
 azureRG := {
@@ -240,7 +236,7 @@ helloworldJVMFullDist := {
 // p3: helloworldjs, use webpack to bundle
 // task that returns a task
 //lazy val helloworldjsdist = taskKey[sbt.Def.Initialize[Task[Unit]]]("Create dist helloworldjs")
-lazy val helloworldjsdist = taskKey[Unit]("Create dist helloworldjs")
+lazy val helloworldjsdist = taskKey[Unit]("Create dist helloworldjst")
 helloworldjsdist := (Def.taskDyn {
   val s = streams.value
   s.log.info("Assembling helloworldjs")

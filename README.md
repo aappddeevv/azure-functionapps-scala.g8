@@ -4,8 +4,8 @@ g8 aappddeevv/azure-functionapps-scala
 
 [azure functionapps](https://docs.microsoft.com/en-us/azure/azure-functions/)
 allow you to call a function in response to an event. You can write these
-function in scala-jvm and scala-js. This project template creates two functions,
-one for the jvm and one for nodejs (javascript).
+function in scala-jvm and scala-js. This project template creates three functions,
+two for the jvm (fatjar and non-fatjar) and one for nodejs (javascript via scala-js).
 
 Reading this
 [blog](http://msdynamicscrmmeanderings.blogspot.com/2018/05/dynamics-crm-azure-functionapps-and-java.html)
