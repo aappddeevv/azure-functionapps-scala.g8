@@ -105,7 +105,6 @@ lazy val helloworldjs = project
  */
 
 
-// copy root/src/main/resources to toplevel dist folder
 val copyRoot = Def.task {
   println("Copying root level files from root project.") 
   import sbt.io._
@@ -113,26 +112,9 @@ val copyRoot = Def.task {
       IO.copyDirectory(rdir, dist.value))
 }
 
-//
-// p1: helloworldjvmfatjar
-// Remember:
-// helloworldjvmfatjar / package => produces .jar of your sources only
-// helloworldjvmfatjar / assembly => produces fat jar via sbt-assembly plugin
 lazy val helloworldJVMFatjarDist = taskKey[Unit]("Create dist JVM fatjar functtion.")
 helloworldJVMFatjarDist := {
-  println("Assembling helloworldjvmfatjar")
-  // dtaskDyn of function = name of project
-  val fname = (helloworldjvmfatjar / name).value // string
-  val fdir = dist.value / fname // a File
-                                    // copy unmanaged resources e.g. <project>/src/main/resources
-    (helloworldjvmfatjar / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
-      IO.copyDirectory(rdir, fdir))
-  // run the assembly process (which in turn runs compiles)
-    (assembly in helloworldjvmfatjar).value
-  // copy executable artifacts: only 1 artifact since this is a fat jar
-  val outputFile = (helloworldjvmfatjar / assembly / assemblyOutputPath).value
-  val targetFile = fdir / (helloworldjvmfatjar / assembly / assemblyJarName).value
-  if(outputFile.exists) IO.copyFile(outputFile, targetFile)
+  jvmFatJarProject(helloworldjvmfatjar).value
 }
 
 lazy val helloworldJVMFatjarFullDist = taskKey[Unit]("Create full dist for just the JVM fatjar function.")
@@ -143,35 +125,9 @@ helloworldJVMFatjarFullDist := {
   helloworldJVMFatjarDist.value
 }
 
-//
-// helloworldjvm, copy individual jar files and dependencies into the
-// functiondir. You could alter this to have all dependencies go to a common dir
-// but space is cheap even in the cloud. The classpath is mostly broken in the
-// current functionapps. For more than 1 jar, place jar into functionapp root
-// directory, ensure your function.json indicates "../thejar.jar" and then place
-// all other jars into a "root/lib" directory.
-//
 lazy val helloworldJVMDist = taskKey[Unit]("Create dist helloworldjvm")
 helloworldJVMDist := {
-  println("Assembling helloworldjvm")
-  val fname = (helloworldjvm / name).value // string
-  val fdir = dist.value / fname
-  val libdir = dist.value / "lib"
-  // copy unmanaged resources e.g. <project>/src/main/resources
-    (helloworldjvm / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
-      IO.copyDirectory(rdir, fdir))
-  // this forces the package task to run...
-  val p = (helloworldjvm / Compile / packageBin / packagedArtifact).value // (art, file)
-
-  // copy jar created from project
-  val outputFile = (helloworldjvm / Compile / packageBin / artifactPath).value
-  //val targetFile =       fdir / p._2.name
-  val targetFile =       dist.value / p._2.name
-  if(outputFile.exists) IO.copyFile(outputFile, targetFile)
-  // copy dependencies jars, often is a larger set of jars than you think :-)
-  (helloworldjvm / Runtime / fullClasspath).value.files.filter(_.exists).filterNot(_.isDirectory).foreach{depfile =>
-    IO.copyFile(depfile, libdir / depfile.name)
-  }
+  jvmProject(helloworldjvm).value
 }
 
 lazy val helloworldJVMFullDist = taskKey[Unit]("Create full dist for just the JVM fatjar function.")
@@ -182,26 +138,10 @@ helloworldJVMFullDist := {
   helloworldJVMDist.value
 }
 
-// p3: helloworldjs, use webpack to bundle
-// task that returns a task
-//lazy val helloworldjsdist = taskKey[sbt.Def.Initialize[Task[Unit]]]("Create dist helloworldjs")
 lazy val helloworldjsdist = taskKey[Unit]("Create dist helloworldjst")
-helloworldjsdist := (Def.taskDyn {
-  val s = streams.value
-  s.log.info("Assembling helloworldjs")
-  val fname = (helloworldjs / name).value // string
-  val fdir = dist.value / fname
-    (helloworldjs / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
-      IO.copyDirectory(rdir, fdir))
-  if(buildEnv.value.startsWith("prod")) Def.task[Unit] {
-    (helloworldjs / Compile / fullOptJS).value
-    "npm run functionapps -- --env.name=helloworldjs --env.BUILD_KIND=production" !
-  }
-  else Def.task[Unit] {
-    (helloworldjs / Compile / fastOptJS).value
-    "npm run functionapps -- --env.name=helloworldjs" !
-  }
-}).value
+helloworldjsdist := {
+  jsProject(helloworldjs).value
+}
 
 lazy val createDistJS = taskKey[Unit]("Create distribution for just the js function.")
 createDistJS := {
@@ -240,3 +180,59 @@ addCommandAlias("buildAndUploadJVM", ";helloworldJVMFullDist; createZip; upload"
 addCommandAlias("watchJS", "~ buildAndUploadJS")
 
 
+
+def jvmProject(proj: Project) = Def.task {
+  val s = streams.value
+  s.log.info(s"Assembling \${(proj / name).value}")
+  val fname = (proj / name).value // string
+  val fdir = dist.value / fname
+  val libdir = dist.value / "lib"
+  // copy unmanaged resources e.g. <project>/src/main/resources
+    (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
+      IO.copyDirectory(rdir, fdir))
+  // this forces the package task to run...
+  val p = (proj / Compile / packageBin / packagedArtifact).value // (art, file)
+  // copy jar created from project
+  val outputFile = (proj / Compile / packageBin / artifactPath).value
+  //val targetFile =       fdir / p._2.name
+  val targetFile =       dist.value / p._2.name
+  if(outputFile.exists) IO.copyFile(outputFile, targetFile)
+  // copy dependencies jars, often is a larger set of jars than you think :-)
+  (proj / Runtime / fullClasspath).value.files.filter(_.exists).filterNot(_.isDirectory).foreach{depfile =>
+    IO.copyFile(depfile, libdir / depfile.name)
+  }  
+}
+
+def jvmFatJarProject(proj: Project) = Def.task {
+  val s = streams.value
+  s.log.info(s"Assembling \${(proj / name).value}")
+  // dtaskDyn of function = name of project
+  val fname = (proj / name).value // string
+  val fdir = dist.value / fname // a File
+                                    // copy unmanaged resources e.g. <project>/src/main/resources
+    (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
+      IO.copyDirectory(rdir, fdir))
+  // run the assembly process (which in turn runs compiles)
+    (assembly in proj).value
+  // copy executable artifacts: only 1 artifact since this is a fat jar
+  val outputFile = (proj / assembly / assemblyOutputPath).value
+  val targetFile = fdir / (proj / assembly / assemblyJarName).value
+  if(outputFile.exists) IO.copyFile(outputFile, targetFile)
+}
+
+def jsProject(proj: Project) = Def.taskDyn {  
+  val s = streams.value
+  s.log.info(s"Assembling \${(proj / name).value}")
+  val fname = (proj / name).value // string
+  val fdir = dist.value / fname
+    (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
+      IO.copyDirectory(rdir, fdir))
+  if(buildEnv.value.startsWith("prod")) Def.task[Unit] {
+    (proj / Compile / fullOptJS).value
+    s"npm run functionapps -- --env.name=\${fname} --env.BUILD_KIND=production" !
+  }
+  else Def.task[Unit] {
+    (proj / Compile / fastOptJS).value
+    s"npm run functionapps -- --env.name=\${fname}" !
+  }
+}
