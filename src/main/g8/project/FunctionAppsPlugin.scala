@@ -5,6 +5,8 @@ import sbt._
 import sbt.io.IO
 import sbt.Keys._
 import complete.DefaultParsers._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import sbtassembly.AssemblyPlugin.autoImport._
 
 object AzureFunctionappPlugin extends AutoPlugin {
   //override def requires: Plugins = plugins.JvmPlugin && org.scalajs.sbtplugin.ScalaJSPlugin
@@ -22,6 +24,63 @@ object AzureFunctionappPlugin extends AutoPlugin {
     val createDistDirectory = taskKey[Unit]("Create zip deploy distribution directory.")
     val createZip = taskKey[Unit]("Creating zip deploy distribution file.")
     val upload = taskKey[Unit]("Run the azure CLI to upload the dist. Requires env props/vars.")
+
+    def jvmProjectDist(proj: Project) = Def.task {
+      val s = streams.value
+      s.log.info(s"Assembling ${(proj / name).value}")
+      val fname = (proj / name).value // string
+      val fdir = dist.value / fname
+      val libdir = dist.value / "lib"
+      // copy unmanaged resources e.g. <project>/src/main/resources
+        (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
+          IO.copyDirectory(rdir, fdir))
+      // this forces the package task to run...
+      val p = (proj / Compile / packageBin / packagedArtifact).value // (art, file)
+                                                                     // copy jar created from project
+      val outputFile = (proj / Compile / packageBin / artifactPath).value
+      //val targetFile =       fdir / p._2.name
+      val targetFile =       dist.value / p._2.name
+      if(outputFile.exists) IO.copyFile(outputFile, targetFile)
+      // copy dependencies jars, often is a larger set of jars than you think :-)
+        (proj / Runtime / fullClasspath).value.files.filter(_.exists).filterNot(_.isDirectory).foreach{depfile =>
+          IO.copyFile(depfile, libdir / depfile.name)
+        }
+    }
+
+    def jvmFatJarProject(proj: Project) = Def.task {
+      val s = streams.value
+      s.log.info(s"Assembling ${(proj / name).value}")
+      // dtaskDyn of function = name of project
+      val fname = (proj / name).value // string
+      val fdir = dist.value / fname // a File
+                                    // copy unmanaged resources e.g. <project>/src/main/resources
+        (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
+          IO.copyDirectory(rdir, fdir))
+      // run the assembly process (which in turn runs compiles)
+        (assembly in proj).value
+      // copy executable artifacts: only 1 artifact since this is a fat jar
+      val outputFile = (proj / assembly / assemblyOutputPath).value
+      val targetFile = fdir / (proj / assembly / assemblyJarName).value
+      if(outputFile.exists) IO.copyFile(outputFile, targetFile)
+    }
+
+    def jsProject(proj: Project) = Def.taskDyn {
+      val s = streams.value
+      s.log.info(s"Assembling ${(proj / name).value}")
+      val fname = (proj / name).value // string
+      val fdir = dist.value / fname
+        (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
+          IO.copyDirectory(rdir, fdir))
+      if(buildEnv.value.startsWith("prod")) Def.task[Unit] {
+        (proj / Compile / fullOptJS).value
+        s"npm run functionapps -- --env.name=${fname} --env.BUILD_KIND=production" !
+      }
+      else Def.task[Unit] {
+        (proj / Compile / fastOptJS).value
+        s"npm run functionapps -- --env.name=${fname}" !
+      }
+    }
+    
   }
 
   import autoImport._

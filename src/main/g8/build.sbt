@@ -31,13 +31,15 @@ lazy val scalajsSettings = Seq(
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },  
 )
 
+lazy val testLibs = Def.setting(Seq(
+    "org.scalatest"          %%% "scalatest"    % "latest.release" % "test"
+))
+
 lazy val commonSettings = Seq(
   // version is applied to all sub-projects unless overridden
   version := "0.1.0",
   scalacOptions ++= commonScalacOptions,
-  libraryDependencies ++= Seq(
-    //"org.scalatest"          %%% "scalatest"    % "latest.release" % "test")
-  )
+  libraryDependencies ++= testLibs.value,
 )
 
 lazy val libsettings = buildSettings ++ commonSettings
@@ -127,7 +129,7 @@ helloworldJVMFatjarFullDist := {
 
 lazy val helloworldJVMDist = taskKey[Unit]("Create dist helloworldjvm")
 helloworldJVMDist := {
-  jvmProject(helloworldjvm).value
+  jvmProjectDist(helloworldjvm).value
 }
 
 lazy val helloworldJVMFullDist = taskKey[Unit]("Create full dist for just the JVM fatjar function.")
@@ -178,61 +180,3 @@ addCommandAlias("buildAndUploadJVMFat", ";helloworldJVMFatjarFullDist; createZip
 addCommandAlias("buildAndUploadJVM", ";helloworldJVMFullDist; createZip; upload")
 
 addCommandAlias("watchJS", "~ buildAndUploadJS")
-
-
-
-def jvmProject(proj: Project) = Def.task {
-  val s = streams.value
-  s.log.info(s"Assembling \${(proj / name).value}")
-  val fname = (proj / name).value // string
-  val fdir = dist.value / fname
-  val libdir = dist.value / "lib"
-  // copy unmanaged resources e.g. <project>/src/main/resources
-    (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
-      IO.copyDirectory(rdir, fdir))
-  // this forces the package task to run...
-  val p = (proj / Compile / packageBin / packagedArtifact).value // (art, file)
-  // copy jar created from project
-  val outputFile = (proj / Compile / packageBin / artifactPath).value
-  //val targetFile =       fdir / p._2.name
-  val targetFile =       dist.value / p._2.name
-  if(outputFile.exists) IO.copyFile(outputFile, targetFile)
-  // copy dependencies jars, often is a larger set of jars than you think :-)
-  (proj / Runtime / fullClasspath).value.files.filter(_.exists).filterNot(_.isDirectory).foreach{depfile =>
-    IO.copyFile(depfile, libdir / depfile.name)
-  }  
-}
-
-def jvmFatJarProject(proj: Project) = Def.task {
-  val s = streams.value
-  s.log.info(s"Assembling \${(proj / name).value}")
-  // dtaskDyn of function = name of project
-  val fname = (proj / name).value // string
-  val fdir = dist.value / fname // a File
-                                    // copy unmanaged resources e.g. <project>/src/main/resources
-    (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
-      IO.copyDirectory(rdir, fdir))
-  // run the assembly process (which in turn runs compiles)
-    (assembly in proj).value
-  // copy executable artifacts: only 1 artifact since this is a fat jar
-  val outputFile = (proj / assembly / assemblyOutputPath).value
-  val targetFile = fdir / (proj / assembly / assemblyJarName).value
-  if(outputFile.exists) IO.copyFile(outputFile, targetFile)
-}
-
-def jsProject(proj: Project) = Def.taskDyn {  
-  val s = streams.value
-  s.log.info(s"Assembling \${(proj / name).value}")
-  val fname = (proj / name).value // string
-  val fdir = dist.value / fname
-    (proj / Compile / unmanagedResourceDirectories).value.foreach(rdir =>
-      IO.copyDirectory(rdir, fdir))
-  if(buildEnv.value.startsWith("prod")) Def.task[Unit] {
-    (proj / Compile / fullOptJS).value
-    s"npm run functionapps -- --env.name=\${fname} --env.BUILD_KIND=production" !
-  }
-  else Def.task[Unit] {
-    (proj / Compile / fastOptJS).value
-    s"npm run functionapps -- --env.name=\${fname}" !
-  }
-}
