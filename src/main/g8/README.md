@@ -1,6 +1,9 @@
 # App
 
-Your awesome azure functionapp functions.
+Your awesome azure functionapp functions. It is assumed you have already created
+your functionapp on azure through the portal or the azure CLI but you need to
+create the functions using scala. There are three "hello" functions defined in
+this project. Two functions run on the jvm and the third runs on node.
 
 # Background
 
@@ -31,18 +34,19 @@ within in the project and the deployed functionapp.
 ## Tasks
 
 All of the tasks are coded within the .sbt file itself and there is no cool
-plugin because your packaging needs may be quite diverse and unique *all* the
-packaging code are left as tasks. Each project has a few tasks that roughly
-follow a naming convention. It's messy but gives you the basis to change
-anything you want without going crazy trying to trick sbt into doing what you
-want it to do.
+plugin because your packaging needs may be diverse. *All* the packaging code are
+build.sbt tasks and settings. Each project has a few tasks that roughly follow a
+naming convention. It's messy but gives you the basis to change anything you
+want without going crazy trying to trick sbt into doing what you want it to do
+if it was all in a plugin and enforced a specific layout on you.
 
 * `creatDist`: The output distribution director that consolidates all of the inputs
   either through copying or bundling.
 * `createZip`: Create the zip-deploy file suitable for use with curl or azure CLI.
 * `upload`: Run the azure CLI if AZURE_RG and AZURE_FUNCTIONAPP_NAME are defined
   in either the props on the environment.
-* `buildAndUpload`: Build everything and upload.
+* `buildAndUpload`: Build everything and upload. Assumes you have set the
+  environment variables.
 * `watchJS`: A command alias that builds *only* the JS project and uploads it.
 
 You may run into issues with bundling the jvm project as creating a single
@@ -117,3 +121,7 @@ To restart the functionapp from the command line run:
 ```sh
 az functionapp restart -g $AZURE_RG -n $AZURE_FUNCTIONAPP_NAME
 ```
+
+There is no support to turn annotations into function.json configuration
+files. Ideally, we could re-purpose the maven code from the azure project that
+does this for maven and reuse it in sbt.
