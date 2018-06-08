@@ -2,6 +2,7 @@ import scala.sys.process._
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import org.scalajs.sbtplugin._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import functionapps.AzureFunctionappPlugin.autoImport._
 
 lazy val buildSettings = Seq(
   organization := "$org$",
@@ -99,62 +100,10 @@ lazy val helloworldjs = project
     Seq("io.scalajs"             %%% "nodejs"      % "0.4.2",
   ))
 
-val azureRG = settingKey[Option[String]]("azure resource group name")
-azureRG := {
-  sys.props.get("AZURE_RG")
-    .orElse(sys.env.get("AZURE_RG"))
-}
-
-val azureFunctionappName = settingKey[Option[String]]("azure functionapp name")
-azureFunctionappName := {
-  sys.props.get("AZURE_FUNCTIONAPP_NAME")
-    .orElse(sys.env.get("AZURE_FUNCTIONAPP_NAME"))
-}
-
-//
-// Obtain env setting as a string: dev, prod, etc.
-// @todo use enum or sealed trait
-//
-val buildEnv = settingKey[String]("Build environment.")
-buildEnv := {
-  sys.props.get("BULID_KIND")
-    .orElse(sys.env.get("BUILD_KIND"))
-    .getOrElse("dev")
-}
-
-onLoadMessage := {
-  val defaultMessage = onLoadMessage.value
-  s"""|\${defaultMessage}
-      |Running in build environment: \${buildEnv.value}""".stripMargin
-}
-
-lazy val dist = settingKey[File]("Target directory for assembling functions.")
-dist := file("dist")
-
-// root level remove dist directory
-cleanFiles += dist.value
-
-val zipName = settingKey[String]("Name of output zip deploy file.")
-zipName := {
-  //val format = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss")
-  //val datepart = format.format(java.util.Calendar.getInstance().getTime())
-  //could use s"""./\${(root / name)value}-\$datepart.zip"""
-  sys.props.get("FUNCTIOINAPPS_ZIPNAME")
-    .orElse(sys.env.get("FUNCTIONAPPS_ZIPNAME"))
-  // the ./ is important due to bug in sbt.io.IO.zip
-    .getOrElse(s"./\${(root / name).value}.zip")
-}
-
 /**
  * Assume zip topdir is wwwroot, functions should be right below
  */
-val createZip = taskKey[Unit]("Creating zip deploy distribution file.")
-createZip := {
-  import sbt.io._
-  println("Building zip file.")
-  val pairs = Path.allSubpaths(dist.value)
-  IO.zip(pairs, file(zipName.value))
-}
+
 
 // copy root/src/main/resources to toplevel dist folder
 val copyRoot = Def.task {
@@ -280,13 +229,6 @@ createDist := {
   helloworldjsdist.value
 }
 
-val createDistDirectory = Def.task {
-  val s = streams.value
-  s.log.info("Creating distribution directory.")
-  // create target directory, if needed
-  IO.createDirectory(dist.value)
-}
-
 addCommandAlias("buildAndUpload", ";createDist; createZip; upload")
 
 addCommandAlias("buildAndUploadJS", ";createDistJS; createZip; upload")
@@ -297,24 +239,4 @@ addCommandAlias("buildAndUploadJVM", ";helloworldJVMFullDist; createZip; upload"
 
 addCommandAlias("watchJS", "~ buildAndUploadJS")
 
-lazy val upload = taskKey[Unit]("Run the azure CLI to upload the dist. Requires env props/vars.")
-upload := {
-  val s = streams.value
-  s.log.info("Uploading via azure.")
-    (azureRG.value, azureFunctionappName.value) match {
-    case (Some(r), Some(n)) =>
-      s"az functionapp deployment source config-zip -g \$r -n \$n --src \${zipName.value}" !
-    case _ => s.log.info("No env variables defined to run command.")
-  }
-}
 
-lazy val restart = taskKey[Unit]("Restart the functiongrup via the CLI.")
-restart := {
-  val s = streams.value
-  s.log.info("Restarting the functionapp")
-    (azureRG.value, azureFunctionappName.value) match {
-    case (Some(r), Some(n)) =>
-      s"az functionapp restart \$r -n \$n" !
-    case _ => s.log.info("No env variables defined to run command.")
-  }
-}
